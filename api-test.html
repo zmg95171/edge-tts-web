@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #dff0d8;
+            border-color: #d6e9c6;
+        }
+        .error {
+            background-color: #f2dede;
+            border-color: #ebccd1;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <h1>API 测试页面</h1>
+    <p>这个页面用于测试 TTS 和 Whisper API 的连接和功能。</p>
+
+    <div class="test-section">
+        <h2>TTS API 测试</h2>
+        <label for="tts-text">要转换为语音的文本:</label>
+        <input type="text" id="tts-text" value="Hello, this is a test of the TTS API." placeholder="输入要转换为语音的文本">
+        
+        <label for="tts-voice">选择语音:</label>
+        <select id="tts-voice">
+            <option value="en-US-JennyNeural">Jenny (en-US)</option>
+            <option value="zh-CN-XiaoxiaoNeural">晓晓 (zh-CN)</option>
+        </select>
+        
+        <button class="test-button" onclick="testTTS()">测试 TTS</button>
+        <button class="test-button" onclick="testTTSVoices()">获取语音列表</button>
+        <div id="tts-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Whisper API 测试</h2>
+        <label for="whisper-audio">选择音频文件:</label>
+        <input type="file" id="whisper-audio" accept="audio/*">
+        
+        <button class="test-button" onclick="testWhisper()">测试 Whisper</button>
+        <div id="whisper-result" class="result"></div>
+    </div>
+
+    <script>
+        const TTS_API_URL = 'https://tts.2068.online';
+        const WHISPER_API_URL = 'https://whisper.2068.online';
+
+        function logResult(elementId, message, isSuccess = false) {
+            const resultElement = document.getElementById(elementId);
+            resultElement.textContent = message;
+            resultElement.className = `result ${isSuccess ? 'success' : 'error'}`;
+        }
+
+        async function testTTS() {
+            const text = document.getElementById('tts-text').value;
+            const voice = document.getElementById('tts-voice').value;
+            
+            if (!text) {
+                logResult('tts-result', '请输入要转换为语音的文本');
+                return;
+            }
+
+            logResult('tts-result', '正在测试 TTS API...');
+
+            try {
+                const params = new URLSearchParams({
+                    text: text,
+                    voice: voice,
+                    output_format: 'mp3'
+                });
+                
+                const response = await fetch(`${TTS_API_URL}/api/tts?${params.toString()}`);
+                console.log('TTS 响应状态:', response.status);
+                
+                if (response.ok) {
+                    const audioBlob = await response.blob();
+                    console.log('TTS 音频大小:', audioBlob.size, '类型:', audioBlob.type);
+                    
+                    // 创建音频元素并播放
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const audio = new Audio(audioUrl);
+                    audio.controls = true;
+                    
+                    // 清除之前的结果并添加音频播放器
+                    const resultElement = document.getElementById('tts-result');
+                    resultElement.innerHTML = '';
+                    const audioContainer = document.createElement('div');
+                    audioContainer.textContent = 'TTS 成功! 音频大小: ' + audioBlob.size + ' 字节\n\n';
+                    audioContainer.appendChild(audio);
+                    resultElement.appendChild(audioContainer);
+                    resultElement.className = 'result success';
+                } else {
+                    const errorText = await response.text();
+                    console.error('TTS 错误响应:', errorText);
+                    logResult('tts-result', `TTS API 错误: ${response.status} - ${errorText}`);
+                }
+            } catch (error) {
+                console.error('TTS 请求错误:', error);
+                logResult('tts-result', `TTS 请求失败: ${error.message}`);
+            }
+        }
+
+        async function testTTSVoices() {
+            logResult('tts-result', '正在获取语音列表...');
+
+            try {
+                const response = await fetch(`${TTS_API_URL}/api/tts/voices`);
+                console.log('语音列表响应状态:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('语音列表数据:', data);
+                    logResult('tts-result', `获取语音列表成功!\n\n${JSON.stringify(data, null, 2)}`, true);
+                } else {
+                    const errorText = await response.text();
+                    console.error('语音列表错误响应:', errorText);
+                    logResult('tts-result', `获取语音列表错误: ${response.status} - ${errorText}`);
+                }
+            } catch (error) {
+                console.error('语音列表请求错误:', error);
+                logResult('tts-result', `语音列表请求失败: ${error.message}`);
+            }
+        }
+
+        async function testWhisper() {
+            const fileInput = document.getElementById('whisper-audio');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                logResult('whisper-result', '请选择音频文件');
+                return;
+            }
+
+            logResult('whisper-result', '正在测试 Whisper API...');
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                // 尝试多个可能的端点
+                const possibleEndpoints = [
+                    '/api/transcribe',
+                    '/api/whisper/transcribe',
+                    '/transcribe',
+                    '/v1/audio/transcriptions'
+                ];
+                
+                let success = false;
+                let lastError = null;
+                
+                for (const endpoint of possibleEndpoints) {
+                    try {
+                        const response = await fetch(`${WHISPER_API_URL}${endpoint}`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        console.log(`Whisper 端点 ${endpoint} 响应状态:`, response.status);
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log(`Whisper 端点 ${endpoint} 响应数据:`, data);
+                            logResult('whisper-result', `Whisper 成功! 使用端点: ${endpoint}\n\n转录结果: ${data.text || JSON.stringify(data)}`, true);
+                            success = true;
+                            break;
+                        } else {
+                            const errorText = await response.text();
+                            console.error(`Whisper 端点 ${endpoint} 错误响应:`, errorText);
+                            lastError = `${endpoint}: ${response.status} - ${errorText}`;
+                        }
+                    } catch (error) {
+                        console.error(`Whisper 端点 ${endpoint} 请求错误:`, error);
+                        lastError = `${endpoint}: ${error.message}`;
+                    }
+                }
+                
+                if (!success && lastError) {
+                    logResult('whisper-result', `所有 Whisper 端点都失败了:\n\n${lastError}`);
+                }
+            } catch (error) {
+                console.error('Whisper 请求错误:', error);
+                logResult('whisper-result', `Whisper 请求失败: ${error.message}`);
+            }
+        }
+
+        // 页面加载时自动测试 API 健康状态
+        window.onload = async () => {
+            try {
+                // 测试 TTS API 健康状态
+                const ttsHealthResponse = await fetch(`${TTS_API_URL}/api/tts/voices`);
+                console.log('TTS API 健康状态:', ttsHealthResponse.status);
+                
+                // 测试 Whisper API 健康状态
+                const whisperHealthResponse = await fetch(`${WHISPER_API_URL}/health`);
+                console.log('Whisper API 健康状态:', whisperHealthResponse.status);
+                
+                if (ttsHealthResponse.ok && whisperHealthResponse.ok) {
+                    console.log('两个 API 都健康');
+                } else {
+                    console.warn('某些 API 不健康');
+                }
+            } catch (error) {
+                console.error('健康检查失败:', error);
+            }
+        };
+    </script>
+</body>
+</html>
