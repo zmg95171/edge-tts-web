@@ -1,6 +1,7 @@
 import { Language } from "../types";
 
-const WHISPER_SERVICE_URL = ''; // 使用相对路径，通过Vite代理访问Whisper服务
+// 根据环境变量或使用默认的 Whisper API URL
+const WHISPER_SERVICE_URL = import.meta.env.WHISPER_API_URL || 'https://whisper.2068.online';
 
 /**
  * 将音频文件转录为文本

@@ -1,6 +1,7 @@
 import { VoiceOption, Language, Gender } from "../types";
 
-const TTS_SERVICE_URL = ''; // 使用相对路径，通过Vite代理访问TTS服务
+// 根据环境变量或使用默认的 TTS API URL
+const TTS_SERVICE_URL = import.meta.env.TTS_API_URL || 'https://tts.2068.online';
 
 // Placeholder voices, used as fallback if fetching fails or returns invalid data
 const PLACEHOLDER_VOICES: VoiceOption[] = [
