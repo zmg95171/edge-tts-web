@@ -1,0 +1,5 @@
+{
+  "name": "Gemini Neural TTS",
+  "description": "A native-style mobile application converting text and documents to high-quality speech using the Gemini 2.5 Flash Audio model.",
+  "requestFramePermissions": []
+}
