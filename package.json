@@ -10,7 +10,9 @@
     "version:patch": "npm version patch",
     "version:minor": "npm version minor",
     "version:major": "npm version major",
-    "release": "npm run build && npm version patch && git push --follow-tags",
+    "release": "node deploy.js patch origin",
+    "release:minor": "node deploy.js minor origin",
+    "release:major": "node deploy.js major origin",
     "postversion": "git push && git push --tags"
   },
   "dependencies": {
