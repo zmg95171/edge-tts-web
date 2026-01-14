@@ -1,23 +1,121 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+<h1>Edge-TTS 文本朗读 Web 应用</h1>
+<p>一个基于 React 的现代化文本转语音 Web 应用，支持多种语音合成和语音识别功能</p>
 </div>
 
-# Run and deploy your AI Studio app
+## 功能特点
 
-This contains everything you need to run your app locally.
+- 🎤 **文本转语音 (TTS)**：使用 Edge TTS API 进行高质量文本转语音
+- 🎧 **语音识别 (Whisper)**：集成 Whisper API 进行语音转文本
+- 🎨 **现代 UI**：采用 Tailwind CSS 设计的响应式用户界面
+- ⚡ **快速部署**：支持 Vercel 平台一键部署
+- 🔧 **版本控制**：内置版本管理脚本，方便发布更新
 
-View your app in AI Studio: https://ai.studio/apps/drive/1e4vzGFAXqK9zfe0kBXvfO92OfjRlFqyX
+## 技术栈
 
-## Run Locally
+- **前端框架**: React 19.2.3
+- **构建工具**: Vite
+- **样式**: Tailwind CSS
+- **语音服务**: Edge TTS API, Whisper API
+- **部署平台**: Vercel
+- **语言**: TypeScript
 
-**Prerequisites:**  Node.js
+## 快速开始
 
+**先决条件:** Node.js 18+
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+1. **克隆仓库**
+   ```bash
+   git clone https://github.com/你的用户名/edge-tts-web.git
+   cd edge-tts-web
+   ```
+
+2. **安装依赖**
+   ```bash
+   npm install
+   ```
+
+3. **环境配置**
+   
+   创建 `.env.local` 文件并添加以下环境变量：
+   ```env
+   TTS_API_URL=https://tts.2068.online
+   WHISPER_API_URL=https://whisper.2068.online
+   # 可选：OpenAI API Key（用于 LLM 功能）
+   OPENAI_API_KEY=your-openai-api-key
+   # 可选：Anthropic API Key（用于 Claude 功能）
+   ANTHROPIC_API_KEY=your-anthropic-api-key
+   ```
+
+4. **启动开发服务器**
+   ```bash
+   npm run dev
+   ```
+   
+   访问 [http://localhost:5173](http://localhost:5173) 查看应用。
+
+## 部署到 Vercel
+
+详细的部署指南请参考 [Vercel 部署配置.md](./Vercel%20部署配置.md)。
+
+简短步骤：
+1. 注册 [Vercel](https://vercel.com) 账户
+2. 推送代码到 GitHub
+3. 在 Vercel 中导入项目
+4. 配置环境变量
+5. 部署应用
+
+## 版本控制
+
+项目内置版本控制脚本：
+
+- `npm run version:patch` - 更新补丁版本 (1.0.0 → 1.0.1)
+- `npm run version:minor` - 更新次版本 (1.0.0 → 1.1.0)
+- `npm run version:major` - 更新主版本 (1.0.0 → 2.0.0)
+- `npm run release` - 构建项目并发布补丁版本
+
+## 项目结构
+
+```
+edge-tts-web/
+├── api/                    # Vercel API 路由
+│   ├── tts-edge.ts       # TTS API 代理
+│   └── whisper-edge.ts    # Whisper API 代理
+├── components/            # React 组件
+│   ├── AudioPlayer.tsx
+│   ├── TextInput.tsx
+│   └── VoiceInput.tsx
+├── services/              # API 服务
+│   ├── ttsService.ts
+│   └── whisperService.ts
+├── utils/                 # 工具函数
+│   └── audioUtils.ts
+├── App.tsx               # 主应用组件
+├── index.html            # HTML 模板
+├── index.tsx             # 应用入口
+├── vite.config.ts        # Vite 配置
+├── vercel.json           # Vercel 部署配置
+└── package.json          # 项目配置
+```
+
+## 贡献指南
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+## 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
+## 致谢
+
+- [Edge TTS](https://github.com/rany2/edge-tts) - Microsoft Edge Text to Speech
+- [Whisper](https://github.com/openai/whisper) - OpenAI 的语音识别系统
+- [Vite](https://vitejs.dev/) - 快速的前端构建工具
+- [Tailwind CSS](https://tailwindcss.com/) - 实用优先的 CSS 框架
 
 ## 技术架构实现
 
