@@ -14,6 +14,8 @@ export const transcribeAudio = async (
   language?: Language
 ): Promise<string> => {
   try {
+    console.log("Whisper Service URL:", WHISPER_SERVICE_URL);
+    
     const formData = new FormData();
     formData.append('audio', audioBlob, 'audio.webm');
     
@@ -21,13 +23,53 @@ export const transcribeAudio = async (
     if (language) {
       const langCode = language === Language.Chinese ? 'zh' : 'en';
       formData.append('language', langCode);
+      console.log("Language code:", langCode);
     }
 
-    const response = await fetch(`${WHISPER_SERVICE_URL}/api/whisper/transcribe`, {
-      method: 'POST',
-      body: formData
-    });
+    // 尝试使用多个可能的端点
+    const possibleEndpoints = [
+      '/api/transcribe',
+      '/api/whisper/transcribe',
+      '/transcribe',
+      '/v1/audio/transcriptions'
+    ];
+    
+    let response: Response | null = null;
+    let lastError: Error | null = null;
+    
+    for (const endpoint of possibleEndpoints) {
+      const requestUrl = `${WHISPER_SERVICE_URL}${endpoint}`;
+      console.log("尝试 Whisper 端点:", requestUrl);
+      
+      try {
+        const testResponse = await fetch(requestUrl, {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (testResponse.ok) {
+          response = testResponse;
+          console.log("成功连接到端点:", endpoint);
+          break;
+        } else {
+          const errorText = await testResponse.text();
+          console.log(`端点 ${endpoint} 返回错误:`, testResponse.status, errorText);
+          lastError = new Error(`Endpoint ${endpoint} returned ${testResponse.status}: ${errorText}`);
+        }
+      } catch (error) {
+        console.log(`端点 ${endpoint} 连接失败:`, error);
+        lastError = error as Error;
+      }
+    }
+    
+    if (!response && lastError) {
+      throw lastError;
+    } else if (!response) {
+      throw new Error("无法连接到任何 Whisper 端点");
+    }
 
+    console.log("Whisper response status:", response.status, response.statusText);
+    
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Error transcribing audio - status:", response.status, "text:", errorText);

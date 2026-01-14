@@ -115,27 +115,35 @@ export const generateSpeech = async (
   }
 
   try {
+    // 调试信息
+    console.log("TTS Service URL:", TTS_SERVICE_URL);
     console.log("Generating speech with voice ID:", voice.id); // Log the voice ID being sent
-    const response = await fetch(`${TTS_SERVICE_URL}/api/tts/speak`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        text: text,
-        voiceId: voice.id, // 使用voiceId字段名，并传递完整的id
-        output_format: 'mp3', // Assuming mp3 based on documentation
-      }),
+    
+    // 使用查询参数构建 GET 请求
+    const params = new URLSearchParams({
+      text: text,
+      voice: voice.id, // 使用voice字段名
+      output_format: 'mp3' // Assuming mp3 based on documentation
+    });
+    
+    const requestUrl = `${TTS_SERVICE_URL}/api/tts?${params.toString()}`;
+    console.log("Request URL:", requestUrl);
+    
+    const response = await fetch(requestUrl, {
+      method: 'GET'
     });
 
+    console.log("Response status:", response.status, response.statusText);
+    
     if (!response.ok) {
       // Attempt to parse error response as JSON, fallback to text
       let errorDetails = response.statusText;
       try {
-        const errorJson = await response.json();
-        errorDetails = errorJson.error || JSON.stringify(errorJson);
+        const errorText = await response.text();
+        console.log("Error response text:", errorText);
+        errorDetails = errorText;
       } catch (e) {
-        // Ignore if parsing as JSON fails
+        console.log("Failed to parse error response");
       }
       throw new Error(`TTS generation failed: ${response.status} - ${errorDetails}`);
     }
