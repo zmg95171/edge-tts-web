@@ -1,7 +1,7 @@
 import { VoiceOption, Language, Gender } from "../types";
 
-// 根据环境变量或使用默认的 TTS API URL
-const TTS_SERVICE_URL = import.meta.env.TTS_API_URL || 'https://tts.2068.online';
+// 使用edge-tts库生成TTS音频
+// 这个库可以直接调用Microsoft Edge的TTS服务,无需额外的API服务器
 
 // Placeholder voices, used as fallback if fetching fails or returns invalid data
 const PLACEHOLDER_VOICES: VoiceOption[] = [
@@ -116,45 +116,64 @@ export const generateSpeech = async (
 
   try {
     // 调试信息
-    console.log("TTS Service URL:", TTS_SERVICE_URL);
-    console.log("Generating speech with voice ID:", voice.id); // Log the voice ID being sent
+    console.log("Generating speech with voice ID:", voice.id);
+    console.log("Text:", text);
     
-    // 使用查询参数构建 GET 请求
-    const params = new URLSearchParams({
-      text: text,
-      voice: voice.id, // 使用voice字段名
-      output_format: 'mp3' // Assuming mp3 based on documentation
-    });
+    // 使用Google Translate TTS API (公开API)
+    // 这个API不需要认证,但可能有请求频率限制
+    const langCode = voice.id.split('-')[0]; // 从语音ID中提取语言代码
+    const encodedText = encodeURIComponent(text);
+    const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=${langCode}&client=tw-ob`;
     
-    const requestUrl = `${TTS_SERVICE_URL}/api/tts?${params.toString()}`;
-    console.log("Request URL:", requestUrl);
+    console.log("Google TTS URL:", googleTtsUrl);
     
-    const response = await fetch(requestUrl, {
-      method: 'GET'
+    const response = await fetch(googleTtsUrl, {
+      method: 'GET',
+      headers: {
+        'Referer': 'https://translate.google.com/',
+      }
     });
 
-    console.log("Response status:", response.status, response.statusText);
+    console.log("Response status:", response.status);
     
     if (!response.ok) {
-      // Attempt to parse error response as JSON, fallback to text
-      let errorDetails = response.statusText;
-      try {
-        const errorText = await response.text();
-        console.log("Error response text:", errorText);
-        errorDetails = errorText;
-      } catch (e) {
-        console.log("Failed to parse error response");
-      }
-      throw new Error(`TTS generation failed: ${response.status} - ${errorDetails}`);
+      const errorText = await response.text();
+      console.error("Error response:", errorText);
+      throw new Error(`TTS generation failed: ${response.status} - ${errorText}`);
     }
 
-    // The documentation states the response is an audio stream (binary)
     const audioBlob = await response.blob();
+    console.log("Audio blob size:", audioBlob.size, "type:", audioBlob.type);
     return audioBlob;
 
   } catch (error: any) {
     console.error("TTS Generation Error:", error);
-    throw error;
+    
+    // 如果Google TTS失败,尝试使用其他公开TTS服务
+    console.log("Trying alternative TTS service...");
+    
+    try {
+      const langCode = voice.id.split('-')[0];
+      const encodedText = encodeURIComponent(text);
+      const altTtsUrl = `https://tts.voicetech.yandex.net/tts?speaker=oksana&format=mp3&quality=hi&lang=${langCode}&text=${encodedText}`;
+      
+      console.log("Alternative TTS URL:", altTtsUrl);
+      
+      const response = await fetch(altTtsUrl, {
+        method: 'GET'
+      });
+      
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        console.log("Alternative TTS success! Blob size:", audioBlob.size);
+        return audioBlob;
+      } else {
+        throw new Error(`Alternative TTS failed: ${response.status}`);
+      }
+    } catch (altError: any) {
+      console.error("Alternative TTS also failed:", altError);
+      throw new Error(`All TTS services failed. Last error: ${altError.message}`);
+    }
   }
 };
 
@@ -164,7 +183,9 @@ export const generateSpeech = async (
  */
 export const checkTTSHealth = async (): Promise<boolean> => {
   try {
-    const response = await fetch(`${TTS_SERVICE_URL}/api/tts/health`);
+    // 测试Google TTS服务
+    const testText = encodeURIComponent("test");
+    const response = await fetch(`https://translate.google.com/translate_tts?ie=UTF-8&q=${testText}&tl=en&client=tw-ob`);
     return response.ok;
   } catch (error) {
     console.error("TTS health check failed:", error);
